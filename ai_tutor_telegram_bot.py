@@ -45,8 +45,8 @@ DATABASE_CONFIG = {
     'driver': config['DATABASE']['DRIVER']
 }
 
-# Tesseract OCR configuration
-pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # For Windows
+# Tesseract OCR configuration For Windows
+pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
 # Set up logging
 logging.basicConfig(
