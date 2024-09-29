@@ -34,6 +34,7 @@ TELEGRAM_BOT_TOKEN = config['TELEGRAM']['BOT_TOKEN']
 AUTHORIZED_USERS = config['TELEGRAM']['AUTHORIZED_USERS']
 
 AUTHORIZED_USERS_SET = set(user.strip().lower() for user in AUTHORIZED_USERS.split(','))
+print(f'Authorized Users:{AUTHORIZED_USERS_SET}')
 
 OPENAI_API_KEY = config['OPENAI']['API_KEY']
 openai.api_key = OPENAI_API_KEY
