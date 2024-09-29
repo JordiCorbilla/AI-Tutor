@@ -12,6 +12,7 @@ The bot now supports user authorization based on a list defined in the config.in
 
 2 Text Interaction:
 - Users can send text messages, and Merlin will respond with helpful answers generated using OpenAI's GPT-4 model.
+- ![image](https://github.com/user-attachments/assets/1713da47-5f0f-4afa-9ccb-408925b0d565)
   
 3 Voice Interaction:
 - Users can send voice messages.
