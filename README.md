@@ -1,7 +1,7 @@
 # AI Tutor Telegram Bot Project
 
 ## Overview
-This project is an AI-powered Telegram bot named Jarvis, designed to assist users by providing helpful and succinct answers. The bot can handle text messages, voice messages, images, and can generate images based on user prompts.
+This project is an AI-powered Telegram bot named Merlin, designed to assist users by providing helpful and succinct answers. The bot can handle text messages, voice messages, images, and can generate images based on user prompts.
 The bot now supports user authorization based on a list defined in the config.ini file. Only authorized users can interact with the bot.
 
 ### Features
