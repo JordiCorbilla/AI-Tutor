@@ -74,7 +74,7 @@ def add_reminder(user_id, reminder_time, message, inner_context):
     })
     logger.info(f"Reminder added for user {user_id} at {reminder_time} with message: '{message}'")
 
-def send_reminder(context):
+def send_reminder():
     current_time = datetime.now()
     for reminder in reminders.copy():  
         try:
@@ -83,16 +83,16 @@ def send_reminder(context):
                 logger.info(f"Sending reminder to user {reminder['user_id']} at {current_time}: {reminder['message']}")
                 
                 inner_context = reminder['context']
-                inner_context.bot.send_message(chat_id = reminder["user_id"], text = reminder["message"])  
+                inner_context.bot.send_message(chat_id = reminder["user_id"], text = f"Reminder!!\n {reminder['message']}")  
                 logger.info(f"Reminder sent to user {reminder['user_id']} for message: '{reminder['message']}'")
                 
                 reminders.remove(reminder)  
         except Exception as e:
             logger.error(f"Error sending reminder to user {reminder['user_id']}: {e}", exc_info=True)
 
-def check_reminders(context):
+def check_reminders():
     while True:
-        send_reminder(context)
+        send_reminder()
         time.sleep(10) 
 
 def get_db_connection():
@@ -360,7 +360,7 @@ def main():
     # Start the Bot using long polling
     updater.start_polling()
 
-    threading.Thread(target=check_reminders, args=(updater.bot,), daemon=True).start()
+    threading.Thread(target=check_reminders, args=(), daemon=True).start()
 
     # Run the bot until you press Ctrl-C
     updater.idle()
