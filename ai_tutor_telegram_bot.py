@@ -83,7 +83,7 @@ def send_reminder():
                 logger.info(f"Sending reminder to user {reminder['user_id']} at {current_time}: {reminder['message']}")
                 
                 inner_context = reminder['context']
-                inner_context.bot.send_message(chat_id = reminder["user_id"], text = f"Reminder!!\n {reminder['message']}")  
+                inner_context.bot.send_message(chat_id = reminder["user_id"], text = f"Reminder!!\n{reminder['message']}")  
                 logger.info(f"Reminder sent to user {reminder['user_id']} for message: '{reminder['message']}'")
                 
                 reminders.remove(reminder)  
