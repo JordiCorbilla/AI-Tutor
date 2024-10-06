@@ -65,11 +65,12 @@ logger = logging.getLogger(__name__)
 
 reminders = []
 
-def add_reminder(user_id, reminder_time, message):
+def add_reminder(user_id, reminder_time, message, inner_context):
     reminders.append({
         "user_id": user_id,
         "time": reminder_time,
-        "message": message
+        "message": message,
+        'context': inner_context
     })
     logger.info(f"Reminder added for user {user_id} at {reminder_time} with message: '{message}'")
 
@@ -81,7 +82,8 @@ def send_reminder(context):
 
                 logger.info(f"Sending reminder to user {reminder['user_id']} at {current_time}: {reminder['message']}")
                 
-                context.bot.send_message(chat_id = reminder["user_id"], text = reminder["message"])  
+                inner_context = reminder['context']
+                inner_context.bot.send_message(chat_id = reminder["user_id"], text = reminder["message"])  
                 logger.info(f"Reminder sent to user {reminder['user_id']} for message: '{reminder['message']}'")
                 
                 reminders.remove(reminder)  
@@ -272,7 +274,7 @@ def handle_text(update, context):
             return
 
         reminder_message = f"You have a reminder set for [{reminder_time.strftime('%Y/%m/%d %H:%M:%S')}]: '{reminder_content}'."
-        add_reminder(user_id, reminder_time, reminder_content)
+        add_reminder(user_id, reminder_time, reminder_content, context)
 
         context.bot.send_message(chat_id=user_id, text=reminder_message)
         return  
