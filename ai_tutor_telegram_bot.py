@@ -24,6 +24,10 @@ import pyodbc
 import os
 import tempfile
 import configparser
+import re
+import threading
+import time
+from datetime import datetime, timedelta
 import requests
 
 # Configuration section
@@ -58,6 +62,30 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+reminders = []
+
+def add_reminder(user_id, reminder_time, message):
+    reminders.append({
+        "user_id": user_id,
+        "time": reminder_time,
+        "message": message
+    })
+    logger.info(f"Reminder added for user {user_id} at {reminder_time} with message: '{message}'")
+
+def send_reminder(context):
+    current_time = datetime.now()
+    for reminder in reminders.copy():  # Iterate over a copy to modify the list
+        if reminder["time"] <= current_time:
+            context.bot.send_message(chat_id=reminder["user_id"], text=reminder["message"])
+            logger.info(f"Reminder sent to user {reminder['user_id']} for message: '{reminder['message']}'")
+            reminders.remove(reminder)  # Remove the reminder after sending
+
+def check_reminders(context):
+    while True:
+        send_reminder(context)
+        time.sleep(10) 
+
 
 def get_db_connection():
     conn = pyodbc.connect(
@@ -215,80 +243,94 @@ def handle_photo(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I couldn't process your image.")
 
 def handle_text(update, context):
-    if not is_user_authorized(update):
-        context.bot.send_message(chat_id=update.effective_chat.id, text="You are not authorized.")
-        return
-    try:
-        user_text = update.message.text
+    user_id = update.effective_user.id
+    user_name = update.effective_user.username or update.effective_user.full_name
+    user_text = update.message.text
 
-        if user_text.lower().startswith('generate image:'):
-            # Extract the prompt for image generation
-            image_prompt = user_text[len('generate image:'):].strip()
-            if not image_prompt:
-                context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide a prompt for image generation after 'generate image:'.")
-                return
-
-            # Generate image using OpenAI API
-            response = openai.Image.create(
-                prompt=image_prompt,
-                n=1,
-                size="512x512"
-            )
-            image_url = response['data'][0]['url']
-
-            # Download the image from the URL
-            image_response = requests.get(image_url)
-
-            # Send the image back to the user
-            context.bot.send_photo(chat_id=update.effective_chat.id, photo=image_response.content)
-
-            # Log the interaction
-            user_id = update.effective_user.id
-            user_name = update.effective_user.username or update.effective_user.full_name
-            log_interaction(user_id, user_name, 'generate image', image_prompt, 'Image generated')
-        elif user_text.lower().startswith('extract text:'):
-            # Handle text extraction without OpenAI
-            context.bot.send_message(chat_id=update.effective_chat.id, text="Please send the image you want to extract text from, and include 'extract text:' in the caption.")
+    # Check for reminder command
+    reminder_match = re.search(r'remind me in (\d+) (second|minute|minutes|hour|hours|day|days)', user_text.lower())
+    if reminder_match:
+        time_value = int(reminder_match.group(1))
+        time_unit = reminder_match.group(2)
+        if 'second' in time_unit:
+            reminder_time = datetime.now() + timedelta(seconds=time_value)
+        elif 'minute' in time_unit:
+            reminder_time = datetime.now() + timedelta(minutes=time_value)
+        elif 'hour' in time_unit:
+            reminder_time = datetime.now() + timedelta(hours=time_value)
+        elif 'day' in time_unit:
+            reminder_time = datetime.now() + timedelta(days=time_value)
         else:
-            ai_response = get_ai_response(user_text)
-            context.bot.send_message(chat_id=update.effective_chat.id, text=ai_response)
+            context.bot.send_message(chat_id=user_id, text="Sorry, I didn't understand the time unit.")
+            return
 
-            # Log the interaction
-            user_id = update.effective_user.id
-            user_name = update.effective_user.username or update.effective_user.full_name
-            log_interaction(user_id, user_name, 'text', user_text, ai_response)
-    except Exception as e:
-        logger.error(f"Error in handle_text: {e}", exc_info=True)
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I couldn't process your message.")
+        reminder_message = f"You have a reminder."
+        add_reminder(user_id, reminder_time, reminder_message)
+
+        context.bot.send_message(chat_id=user_id, text=f"Reminder set for {reminder_time.strftime('%H:%M')} - {reminder_message}")
+        return  
+
+    # Proceed with regular text processing
+    if user_text.lower().startswith('generate image:'):
+
+        image_prompt = user_text[len('generate image:'):].strip()
+        if not image_prompt:
+            context.bot.send_message(chat_id=user_id, text="Please provide a prompt for image generation after 'generate image:'.")
+            return
+
+        # Generate image using OpenAI API
+        response = openai.Image.create(
+            prompt=image_prompt,
+            n=1,
+            size="512x512"
+        )
+        image_url = response['data'][0]['url']
+
+        # Download the image from the URL
+        image_response = requests.get(image_url)
+
+        # Send the image back to the user
+        context.bot.send_photo(chat_id=user_id, photo=image_response.content)
+
+        # Log the interaction
+        log_interaction(user_id, user_name, 'generate image', image_prompt, 'Image generated')
+    elif user_text.lower().startswith('extract text:'):
+        context.bot.send_message(chat_id=user_id, text="Please send the image you want to extract text from, and include 'extract text:' in the caption.")
+    else:
+        ai_response = get_ai_response(user_text)
+        context.bot.send_message(chat_id=user_id, text=ai_response)
+
+        log_interaction(user_id, user_name, 'text', user_text, ai_response)
+
 
 def start(update, context):
     if not is_user_authorized(update):
         context.bot.send_message(chat_id=update.effective_chat.id, text="You are not authorized.")
         return
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Hello! I'm your AI tutor 'Merlin' v1.0. Send me a message, and I'll help you out! Type /help for more info.")
+                             text="Hello! I'm your AI tutor 'Merlin' v1.0. Send me a message, and I'll help you out! Type **/help** for more info.")
 
 def help_command(update, context):
     help_text = (
-        "Hello! I'm your AI tutor 'Merlin'. Here are the commands you can use:\n\n"
-        "/start - Start interacting with the bot.\n"
+        "Hello! I'm your AI tutor 'Merlin' v1.0. Here are the commands you can use:\n\n"
+        "**/start** - Start interacting with the bot.\n"
         "Send me a message to get help on a specific topic.\n\n"
         "Reminders:\n"
         "You can set reminders by saying:\n"
-        "  'Hey remind me in X [minutes/hours/days]' - Set a reminder for a specific duration.\n"
+        "  'Hey **remind me in X [seconds/minutes/hours/days]**' - Set a reminder for a specific duration.\n"
         "  Example: 'Hey remind me in 5 minutes to do my math homework.'\n\n"
         "Voice Messages:\n"
         "Send me a voice message, and I'll transcribe it into text and provide assistance.\n\n"
         "Image Text Extraction:\n"
         "Send me a photo, and I will extract the text from it.\n"
-        "If you want to extract text specifically, include 'extract text:' in the caption of the photo.\n\n"
+        "If you want to extract text specifically, include **'extract text:'** in the caption of the photo.\n\n"
         "Text Queries:\n"
         "You can ask me any question, and I'll do my best to provide a helpful answer.\n"
         "If you want to generate an image, type:\n"
-        "  'generate image: [your prompt]'\n"
+        "  **'generate image:** [your prompt]'\n"
         "  Example: 'generate image: a sunny beach with palm trees.'\n\n"
         "For any other queries, just type your message and I will assist you!\n"
-        "If you need to extract text from an image, please use the caption format 'extract text: [your text]'."
+        "If you need to extract text from an image, please use the caption format **'extract text:** [your text]'."
     )
     context.bot.send_message(chat_id=update.effective_chat.id, text=help_text)                             
 
@@ -308,6 +350,8 @@ def main():
 
     # Start the Bot using long polling
     updater.start_polling()
+
+    threading.Thread(target=check_reminders, args=(updater.bot,), daemon=True).start()
 
     # Run the bot until you press Ctrl-C
     updater.idle()
