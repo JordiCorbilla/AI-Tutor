@@ -266,7 +266,31 @@ def start(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text="You are not authorized.")
         return
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Hello! I'm your AI tutor 'Merlin'. Send me a message, and I'll help you out!")
+                             text="Hello! I'm your AI tutor 'Merlin' v1.0. Send me a message, and I'll help you out! Type /help for more info.")
+
+def help_command(update, context):
+    help_text = (
+        "Hello! I'm your AI tutor 'Merlin'. Here are the commands you can use:\n\n"
+        "/start - Start interacting with the bot.\n"
+        "Send me a message to get help on a specific topic.\n\n"
+        "Reminders:\n"
+        "You can set reminders by saying:\n"
+        "  'Hey remind me in X [minutes/hours/days]' - Set a reminder for a specific duration.\n"
+        "  Example: 'Hey remind me in 5 minutes to do my math homework.'\n\n"
+        "Voice Messages:\n"
+        "Send me a voice message, and I'll transcribe it into text and provide assistance.\n\n"
+        "Image Text Extraction:\n"
+        "Send me a photo, and I will extract the text from it.\n"
+        "If you want to extract text specifically, include 'extract text:' in the caption of the photo.\n\n"
+        "Text Queries:\n"
+        "You can ask me any question, and I'll do my best to provide a helpful answer.\n"
+        "If you want to generate an image, type:\n"
+        "  'generate image: [your prompt]'\n"
+        "  Example: 'generate image: a sunny beach with palm trees.'\n\n"
+        "For any other queries, just type your message and I will assist you!\n"
+        "If you need to extract text from an image, please use the caption format 'extract text: [your text]'."
+    )
+    context.bot.send_message(chat_id=update.effective_chat.id, text=help_text)                             
 
 def main():
     # Create Updater and pass in bot token
@@ -277,6 +301,7 @@ def main():
 
     # Register handlers
     dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(CommandHandler('help', help_command))
     dp.add_handler(MessageHandler(Filters.voice, handle_voice))
     dp.add_handler(MessageHandler(Filters.photo, handle_photo))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_text))
