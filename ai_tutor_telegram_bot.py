@@ -75,11 +75,11 @@ def add_reminder(user_id, reminder_time, message):
 
 def send_reminder(context):
     current_time = datetime.now()
-    for reminder in reminders.copy():  # Iterate over a copy to modify the list
+    for reminder in reminders.copy():  
         if reminder["time"] <= current_time:
-            context.bot.send_message(chat_id=reminder["user_id"], text=reminder["message"])
+            context.bot.send_message(reminder["user_id"], reminder["message"]) 
             logger.info(f"Reminder sent to user {reminder['user_id']} for message: '{reminder['message']}'")
-            reminders.remove(reminder)  # Remove the reminder after sending
+            reminders.remove(reminder) 
 
 def check_reminders(context):
     while True:
@@ -247,11 +247,11 @@ def handle_text(update, context):
     user_name = update.effective_user.username or update.effective_user.full_name
     user_text = update.message.text
 
-    # Check for reminder command
-    reminder_match = re.search(r'remind me in (\d+) (second|minute|minutes|hour|hours|day|days)', user_text.lower())
+    reminder_match = re.search(r'remind me in (\d+) (minute|minutes|hour|hours|day|days)(.*)', user_text.lower())
     if reminder_match:
         time_value = int(reminder_match.group(1))
         time_unit = reminder_match.group(2)
+        reminder_content = reminder_match.group(3).strip()
         if 'second' in time_unit:
             reminder_time = datetime.now() + timedelta(seconds=time_value)
         elif 'minute' in time_unit:
@@ -264,10 +264,10 @@ def handle_text(update, context):
             context.bot.send_message(chat_id=user_id, text="Sorry, I didn't understand the time unit.")
             return
 
-        reminder_message = f"You have a reminder."
-        add_reminder(user_id, reminder_time, reminder_message)
+        reminder_message = f"You have a reminder set for **{reminder_time.strftime('%Y/%m/%d %H:%M:%S')}**: {reminder_content}."
+        add_reminder(user_id, reminder_time, reminder_content)
 
-        context.bot.send_message(chat_id=user_id, text=f"Reminder set for {reminder_time.strftime('%H:%M')} - {reminder_message}")
+        context.bot.send_message(chat_id=user_id, text=reminder_message, parse_mode='MarkdownV2')
         return  
 
     # Proceed with regular text processing
