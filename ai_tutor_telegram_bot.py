@@ -81,7 +81,7 @@ def send_reminder(context):
 
                 logger.info(f"Sending reminder to user {reminder['user_id']} at {current_time}: {reminder['message']}")
                 
-                context.bot.send_message(reminder["user_id"], reminder["message"], parse_mode='MarkdownV2')  
+                context.bot.send_message(chat_id = reminder["user_id"], text = reminder["message"])  
                 logger.info(f"Reminder sent to user {reminder['user_id']} for message: '{reminder['message']}'")
                 
                 reminders.remove(reminder)  
@@ -271,10 +271,10 @@ def handle_text(update, context):
             context.bot.send_message(chat_id=user_id, text="Sorry, I didn't understand the time unit.")
             return
 
-        reminder_message = f"You have a reminder set for [**{reminder_time.strftime('%Y/%m/%d %H:%M:%S')}**]: '{reminder_content}'\."
+        reminder_message = f"You have a reminder set for [{reminder_time.strftime('%Y/%m/%d %H:%M:%S')}]: '{reminder_content}'."
         add_reminder(user_id, reminder_time, reminder_content)
 
-        context.bot.send_message(chat_id=user_id, text=reminder_message, parse_mode='MarkdownV2')
+        context.bot.send_message(chat_id=user_id, text=reminder_message)
         return  
 
     # Proceed with regular text processing
