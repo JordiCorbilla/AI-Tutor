@@ -150,3 +150,7 @@ PS C:\repo\AI-Tutor\venv\Scripts> & c:/repo/AI-Tutor/venv/Scripts/python.exe c:/
 ### Contributing
 - Contributions are welcome! Feel free to open issues or submit pull requests.
 - Please ensure that your code adheres to the existing style and includes necessary logging and error handling.
+
+### Support me
+
+<a href="https://www.buymeacoffee.com/jordicorbilla" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
